@@ -1,0 +1,4 @@
+colSums(is.na(hotel_bookings))
+
+preprocess_params <- preProcess(hotel_bookings, method = 'medianImpute')
+hotel_bookings <- predict(preprocess_params, hotel_bookings)
