@@ -14,7 +14,7 @@ overall monthly booking demand.
 
 ## Dataset
 
-Hotel Booking Demand dataset (Antonio, Almeida & Nunes, 2019) — **119,390 bookings**
+Hotel Booking Demand dataset (Antonio, Almeida & Nunes, 2019): **119,390 bookings**
 across two hotels (city and resort), spanning July 2015 to August 2017, with 8 market
 segments.
 
@@ -37,7 +37,7 @@ use of a non-linear model.
 **Threshold tuning.** At the default 0.50 cutoff the model favoured precision over recall
 (catching only 53% of cancellations) due to 63/37 class imbalance. Lowering the decision
 threshold to 0.25 raised **recall from 53% to 74%**, prioritising the catching of at-risk
-bookings — a sensible trade for a cancellation tool, where a missed cancellation typically
+bookings. A sensible trade for a cancellation tool, where a missed cancellation typically
 costs more than a false alarm. (AUC is unchanged by thresholding; only the decision cutoff
 moves.)
 
