@@ -1,9 +1,15 @@
 library(tidyverse)
 library(caret)
 library(randomForest)
-hotel_bookings <- read.csv("G:\\Programming\\BDA project\\bigdata\\8952620\\hotel_bookings.csv")
-hotel_bookings %>% 
-  select(-babies, -distribution_channel, -agent, -company, -required_car_parking_spaces, -total_of_special_requests)
+library(pROC)
+
+
+hotel_bookings <- read.csv("/Users/shadaabhasan/Coding/Big-data-hotel-booking-analysis/bigdata/hotel_bookings.csv", stringsAsFactors = FALSE)
+cat("Rows:", nrow(hotel_bookings), " | Market segments:", n_distinct(hotel_bookings$market_segment), "\n")
+
+hotel_bookings$children[is.na(hotel_bookings$children)] <- 0
+
+
 hotel_bookings<-hotel_bookings%>%
   mutate(
     hotel=as.factor(hotel),      
@@ -53,11 +59,6 @@ hotel_bookings %>%
   ggplot(aes(x=days_in_waiting_list,fill=is_canceled))+
   geom_histogram(binwidth = 10)+scale_fill_manual(values = c("#7eb0d5","#b2e061"))
 
-cancelledlist <- hotel_bookings[hotel_bookings$Canceled==1,]
-notcancelledlist <- hotel_bookings[hotel_bookings$Not_Canceled==0,]
-
-mytable <- table(hotel_bookings$Canceled)
-
 
 data_model <- hotel_bookings %>%
   select(is_canceled, lead_time, hotel, arrival_date_month, stays_in_week_nights, stays_in_weekend_nights, 
@@ -76,37 +77,13 @@ test_data <- data_model[-train_index, ]
 set.seed(123)
 rf_model <- randomForest(is_canceled ~ ., data = train_data, ntree = 500, mtry = 3, importance = TRUE)
 
-# Check for missing values in the dataset
-colSums(is.na(hotel_bookings))
+# Evaluation 
+rf_pred <- predict(rf_model, test_data)
+rf_prob <- predict(rf_model, test_data, type = "prob")[, 2]
 
-preprocess_params <- preProcess(hotel_bookings, method = 'medianImpute')
-hotel_bookings <- predict(preprocess_params, hotel_bookings)
+confusionMatrix(rf_pred, test_data$is_canceled, positive = "1")
+rf_auc <- auc(roc(response = test_data$is_canceled, predictor = rf_prob))
+cat("Random Forest AUC:", round(rf_auc, 3), "\n")
 
-colSums(is.na(hotel_bookings))
-
-hotel_bookings <- hotel_bookings %>%
-  mutate(across(where(is.factor), ~ ifelse(is.na(.), as.character(stat::Mode(.)), .)))
-
-set.seed(123)
-train_index <- createDataPartition(hotel_bookings$is_canceled, p = 0.7, list = FALSE)
-train_data <- hotel_bookings[train_index, ]
-test_data <- hotel_bookings[-train_index, ]
-
-set.seed(123)
-rf_model <- randomForest(is_canceled ~ ., data = train_data, ntree = 500, mtry = 3, importance = TRUE)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+varImpPlot(rf_model, n.var = 10)
 
