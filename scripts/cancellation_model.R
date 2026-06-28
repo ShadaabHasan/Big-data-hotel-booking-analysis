@@ -5,7 +5,7 @@ library(randomForest)
 library(pROC)
 
 
-hotel_bookings <- read.csv("/Users/shadaabhasan/Coding/Big-data-hotel-booking-analysis/bigdata/hotel_bookings.csv", stringsAsFactors = FALSE)
+hotel_bookings <- read.csv("data/hotel_bookings.csv", stringsAsFactors = FALSE)
 cat("Rows:", nrow(hotel_bookings), " | Market segments:", n_distinct(hotel_bookings$market_segment), "\n")
 
 hotel_bookings$children[is.na(hotel_bookings$children)] <- 0

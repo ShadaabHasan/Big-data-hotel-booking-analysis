@@ -1,4 +1,11 @@
-.Rproj.user
+# RStudio session files
+.Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
+
+# macOS
+.DS_Store
+
+# Data (kept locally, not pushed — see README for download)
+*.csv
