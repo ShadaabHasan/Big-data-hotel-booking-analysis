@@ -9,3 +9,4 @@
 
 # Data (kept locally, not pushed — see README for download)
 *.csv
+project.Rproj
