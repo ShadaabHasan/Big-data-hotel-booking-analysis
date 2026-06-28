@@ -139,3 +139,30 @@ sweep %>%
        subtitle = "Random Forest — cancellation prediction",
        x = "Threshold", y = "Score") +
   theme_minimal()
+
+
+# Partial dependence: how features drive cancellation risk 
+library(pdp)
+
+# Lead time — continuous, so we get a readable risk curve.
+# which.class = "1" tells pdp to plot probability of cancellation.
+pd_lead <- partial(rf_model,
+                   pred.var = "lead_time",
+                   which.class = "1",
+                   prob = TRUE,
+                   train = train_data)
+
+plotPartial(pd_lead,
+            main = "Partial Dependence: Lead Time vs Cancellation Risk",
+            ylab = "Predicted P(cancel)", xlab = "Lead time (days)")
+
+# Market segment — categorical, shows risk level per segment
+pd_seg <- partial(rf_model,
+                  pred.var = "market_segment",
+                  which.class = "1",
+                  prob = TRUE,
+                  train = train_data)
+
+plotPartial(pd_seg,
+            main = "Partial Dependence: Market Segment vs Cancellation Risk",
+            ylab = "Predicted P(cancel)")
