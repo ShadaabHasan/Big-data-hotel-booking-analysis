@@ -102,3 +102,40 @@ cat("\nModel comparison (test set):\n")
 cat("Random Forest      AUC:", round(rf_auc, 3), "\n")
 cat("Logistic Regression AUC:", round(log_auc, 3), "\n")
 
+# Threshold tuning (Random Forest) 
+# rf_prob = P(cancel) on the test set, already computed
+actual <- test_data$is_canceled   # factor with levels "0","1"
+
+thresholds <- seq(0.05, 0.95, by = 0.05)
+
+sweep <- map_dfr(thresholds, function(t) {
+  pred <- factor(ifelse(rf_prob >= t, "1", "0"), levels = c("0", "1"))
+  tp <- sum(pred == "1" & actual == "1")
+  fp <- sum(pred == "1" & actual == "0")
+  fn <- sum(pred == "0" & actual == "1")
+  precision <- ifelse((tp + fp) == 0, NA, tp / (tp + fp))
+  recall    <- tp / (tp + fn)
+  f1        <- ifelse(is.na(precision) | (precision + recall) == 0, NA,
+                      2 * precision * recall / (precision + recall))
+  tibble(threshold = t, precision = precision, recall = recall, f1 = f1)
+})
+
+print(sweep)
+
+# Threshold that maximises F1 (balanced precision/recall)
+best_f1 <- sweep %>% filter(!is.na(f1)) %>% slice_max(f1, n = 1)
+cat("\nBest-F1 threshold:", best_f1$threshold,
+    "| precision:", round(best_f1$precision, 3),
+    "| recall:", round(best_f1$recall, 3),
+    "| F1:", round(best_f1$f1, 3), "\n")
+
+# Precision–recall vs threshold plot
+sweep %>%
+  pivot_longer(c(precision, recall, f1), names_to = "metric", values_to = "value") %>%
+  ggplot(aes(threshold, value, colour = metric)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = best_f1$threshold, linetype = "dashed") +
+  labs(title = "Precision, Recall and F1 vs Classification Threshold",
+       subtitle = "Random Forest — cancellation prediction",
+       x = "Threshold", y = "Score") +
+  theme_minimal()
