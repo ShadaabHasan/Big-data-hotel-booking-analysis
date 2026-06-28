@@ -87,3 +87,18 @@ cat("Random Forest AUC:", round(rf_auc, 3), "\n")
 
 varImpPlot(rf_model, n.var = 10)
 
+# Logistic Regression baseline 
+log_model <- glm(is_canceled ~ ., data = train_data, family = binomial)
+
+log_prob <- predict(log_model, test_data, type = "response")
+log_pred <- factor(ifelse(log_prob > 0.5, "1", "0"), levels = c("0", "1"))
+
+confusionMatrix(log_pred, test_data$is_canceled, positive = "1")
+log_auc <- auc(roc(response = test_data$is_canceled, predictor = log_prob))
+cat("Logistic Regression AUC:", round(log_auc, 3), "\n")
+
+# Comparison
+cat("\nModel comparison (test set):\n")
+cat("Random Forest      AUC:", round(rf_auc, 3), "\n")
+cat("Logistic Regression AUC:", round(log_auc, 3), "\n")
+
