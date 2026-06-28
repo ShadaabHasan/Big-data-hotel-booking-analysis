@@ -1,4 +1,5 @@
 library(tidyverse)
+library(dplyr)
 library(caret)
 library(randomForest)
 library(pROC)
@@ -166,3 +167,42 @@ pd_seg <- partial(rf_model,
 plotPartial(pd_seg,
             main = "Partial Dependence: Market Segment vs Cancellation Risk",
             ylab = "Predicted P(cancel)")
+
+# Business impact: revenue at risk from predicted cancellations 
+
+# test_data is the held-out set; rf_prob = P(cancel) already computed for it.
+# Rebuild total_cost for these rows and clean dirty ADR values.
+test_full <- hotel_bookings[-train_index, ]
+
+impact <- test_full %>%
+  mutate(
+    total_nights  = stays_in_week_nights + stays_in_weekend_nights,
+    adr_clean     = ifelse(adr < 0 | adr > 1000, NA, adr),
+    booking_value = adr_clean * total_nights,
+    pred_prob     = rf_prob,
+    flagged       = pred_prob >= 0.25,
+    actually_cancelled = is_canceled == "1"
+  ) %>%
+  filter(!is.na(booking_value))
+# Total revenue represented by the held-out bookings
+total_revenue <- sum(impact$booking_value)
+
+# Revenue the model FLAGS as at-risk (predicted to cancel)
+flagged_revenue <- impact %>% filter(flagged) %>% summarise(v = sum(booking_value)) %>% pull(v)
+
+# Of flagged revenue, how much was a TRUE cancellation (correctly caught)
+caught_revenue <- impact %>% filter(flagged & actually_cancelled) %>%
+  summarise(v = sum(booking_value)) %>% pull(v)
+
+# Revenue lost to cancellations the model MISSED (flagged = FALSE but did cancel)
+missed_revenue <- impact %>% filter(!flagged & actually_cancelled) %>%
+  summarise(v = sum(booking_value)) %>% pull(v)
+
+cat("Held-out bookings analysed:", nrow(impact), "\n")
+cat("Total revenue (held-out):      EUR", format(round(total_revenue), big.mark = ","), "\n")
+cat("Revenue flagged as at-risk:    EUR", format(round(flagged_revenue), big.mark = ","), "\n")
+cat("  of which truly cancelled:    EUR", format(round(caught_revenue), big.mark = ","), "\n")
+cat("Revenue lost to MISSED cancels:EUR", format(round(missed_revenue), big.mark = ","), "\n")
+cat("Share of cancelled revenue caught:",
+    round(100 * caught_revenue / (caught_revenue + missed_revenue), 1), "%\n")
+
